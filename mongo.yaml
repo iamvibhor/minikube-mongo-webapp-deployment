@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+  labels: #labels are key/value pair that are attached to k8 resources, all pod replicas will have same label, for pod it is a must to use
+    app: mongo
+spec:
+  replicas: 1
+  selector: #inditify all the pods which match lables
+    matchLabels: 
+      app: mongo
+  template: # configuration of the pod, has its own metadata and spec
+    metadata:
+      labels:
+        app: mongo #can be any key/value pair
+    spec:
+      containers: #definaion of containers
+      - name: mongodb
+        image: mongo:5.0 # go to dockerhub and search for the image.. then go to tag section
+        ports:
+        - containerPort: 27017 # check in dockerhub on which does the image starts
+        env: #to set up the username from mongo-secret.yaml file
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password
+---
+apiVersion: v1
+kind: Service # endpoint via which will be able to access mongo
+metadata:
+  name: mongo-service
+spec:
+  selector:
+    app : mongo
+  ports:
+    - protocol: TCP
+      port: 27017 #anyport
+      targetPort: 27017 #always should be similar to container port
